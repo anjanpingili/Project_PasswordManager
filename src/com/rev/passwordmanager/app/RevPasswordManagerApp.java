@@ -26,7 +26,7 @@ public class RevPasswordManagerApp {
             try {
                 choice = Integer.parseInt(sc.nextLine());
             } catch (Exception e) {
-                System.out.println("Invalid choice");
+                System.out.println("Invalid choice. Please enter a number.");
                 continue;
             }
 
@@ -56,7 +56,12 @@ public class RevPasswordManagerApp {
                         String answer = sc.nextLine();
 
                         userService.register(
-                                name, email, password, question, answer);
+                                name,
+                                email,
+                                password,
+                                question,
+                                answer
+                        );
 
                         System.out.println("Registration successful");
                         break;
@@ -71,10 +76,100 @@ public class RevPasswordManagerApp {
 
                         int userId =
                                 userService.login(
-                                        loginEmail, loginPassword);
+                                        loginEmail,
+                                        loginPassword
+                                );
+
+                        if (userId == -1) {
+                            System.out.println("Invalid email or password");
+                            break;
+                        }
 
                         System.out.println("Login successful");
                         System.out.println("User ID: " + userId);
+
+                        // ===== Password Vault Menu =====
+                        boolean loggedIn = true;
+                        while (loggedIn) {
+
+                            System.out.println("\n===== Password Vault Menu =====");
+                            System.out.println("1. Add Password");
+                            System.out.println("2. List Passwords");
+                            System.out.println("3. Search Password");
+                            System.out.println("4. View Password");
+                            System.out.println("5. Logout");
+                            System.out.print("Enter choice: ");
+
+                            int vaultChoice;
+                            try {
+                                vaultChoice =
+                                        Integer.parseInt(sc.nextLine());
+                            } catch (Exception e) {
+                                System.out.println("Invalid choice");
+                                continue;
+                            }
+
+                            switch (vaultChoice) {
+
+                                case 1:
+                                    System.out.print("Account Name: ");
+                                    String accName = sc.nextLine();
+
+                                    System.out.print("Username: ");
+                                    String accUser = sc.nextLine();
+
+                                    System.out.print("Password: ");
+                                    String accPass = sc.nextLine();
+
+                                    if (userService.addPassword(
+                                            userId,
+                                            accName,
+                                            accUser,
+                                            accPass)) {
+                                        System.out.println(
+                                                "Password added successfully");
+                                    } else {
+                                        System.out.println(
+                                                "Failed to add password");
+                                    }
+                                    break;
+
+                                case 2:
+                                    userService.listPasswords(userId);
+                                    break;
+
+                                case 3:
+                                    System.out.print("Enter Account Name: ");
+                                    String searchAcc = sc.nextLine();
+                                    userService.searchPassword(
+                                            userId, searchAcc);
+                                    break;
+
+                                case 4:
+                                    System.out.print("Enter ENTRY_ID: ");
+                                    int entryId =
+                                            Integer.parseInt(sc.nextLine());
+
+                                    System.out.print(
+                                            "Re-enter Master Password: ");
+                                    String masterPass = sc.nextLine();
+
+                                    userService.viewPassword(
+                                            entryId,
+                                            userId,
+                                            masterPass
+                                    );
+                                    break;
+
+                                case 5:
+                                    loggedIn = false;
+                                    System.out.println("Logged out");
+                                    break;
+
+                                default:
+                                    System.out.println("Invalid choice");
+                            }
+                        }
                         break;
 
                     // ================= FORGOT PASSWORD =================
@@ -82,25 +177,32 @@ public class RevPasswordManagerApp {
                         System.out.print("Enter registered Email: ");
                         String fpEmail = sc.nextLine();
 
-                        String secQ =
+                        if (!ValidationUtil.isValidEmail(fpEmail)) {
+                            System.out.println("Invalid email format");
+                            break;
+                        }
+
+                        String secQuestion =
                                 userService.getSecurityQuestion(fpEmail);
 
-                        if (secQ == null) {
+                        if (secQuestion == null) {
                             System.out.println("Email not found");
                             break;
                         }
 
                         System.out.println(
-                                "Security Question: " + secQ);
+                                "Security Question: " + secQuestion);
 
                         System.out.print("Enter Answer: ");
-                        String secAns = sc.nextLine();
+                        String secAnswer = sc.nextLine();
 
                         System.out.print("Enter New Password: ");
-                        String newPass = sc.nextLine();
+                        String newPassword = sc.nextLine();
 
                         if (userService.forgotPassword(
-                                fpEmail, secAns, newPass)) {
+                                fpEmail,
+                                secAnswer,
+                                newPassword)) {
                             System.out.println(
                                     "Password reset successful");
                         } else {
@@ -110,7 +212,7 @@ public class RevPasswordManagerApp {
                         break;
 
                     case 4:
-                        System.out.println("Thank you!");
+                        System.out.println("Thank you for using RevPassword Manager!");
                         sc.close();
                         return;
 
@@ -118,8 +220,10 @@ public class RevPasswordManagerApp {
                         System.out.println("Invalid choice");
                 }
 
-            } catch (ValidationException e) {
-                System.out.println(e.getMessage());
+            } catch (ValidationException ve) {
+                System.out.println(ve.getMessage());
+            } catch (Exception e) {
+                System.out.println("Unexpected error occurred");
             }
         }
     }
