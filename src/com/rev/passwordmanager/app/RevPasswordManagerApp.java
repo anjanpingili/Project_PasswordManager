@@ -2,47 +2,38 @@ package com.rev.passwordmanager.app;
 
 import java.util.Scanner;
 
-import org.apache.log4j.Logger;
-
 import com.rev.passwordmanager.exception.ValidationException;
 import com.rev.passwordmanager.service.UserService;
+import com.rev.passwordmanager.util.ValidationUtil;
 
 public class RevPasswordManagerApp {
 
-    private static final Logger logger =
-            Logger.getLogger(RevPasswordManagerApp.class);
-
     public static void main(String[] args) {
-
-        logger.info("Rev Password Manager Application Started");
 
         Scanner sc = new Scanner(System.in);
         UserService userService = new UserService();
 
-        int loggedInUserId = -1;
-
         while (true) {
 
-            System.out.println("\n ----> Rev Password Manager <----");
+            System.out.println("\n===== Rev Password Manager =====");
             System.out.println("1. Register");
             System.out.println("2. Login");
-            System.out.println("3. Add Password");
-            System.out.println("4. List Passwords");
-            System.out.println("5. Search Password");
-            System.out.println("6. View Password");
-            System.out.println("7. Update Password");
-            System.out.println("8. Delete Password");
-            System.out.println("9. Logout");
-            System.out.println("10. Exit");
+            System.out.println("3. Forgot Password");
+            System.out.println("4. Exit");
             System.out.print("Enter choice: ");
 
-            int choice = sc.nextInt();
-            sc.nextLine();
+            int choice;
+            try {
+                choice = Integer.parseInt(sc.nextLine());
+            } catch (Exception e) {
+                System.out.println("Invalid choice");
+                continue;
+            }
 
             try {
-
                 switch (choice) {
 
+                    // ================= REGISTER =================
                     case 1:
                         System.out.print("Enter Name: ");
                         String name = sc.nextLine();
@@ -50,15 +41,27 @@ public class RevPasswordManagerApp {
                         System.out.print("Enter Email: ");
                         String email = sc.nextLine();
 
+                        if (!ValidationUtil.isValidEmail(email)) {
+                            System.out.println("Invalid email format");
+                            break;
+                        }
+
                         System.out.print("Enter Password: ");
                         String password = sc.nextLine();
 
-                        if (userService.register(name, email, password)) {
-                            logger.info("User registered successfully");
-                            System.out.println("Registration successful");
-                        }
+                        System.out.print("Enter Security Question: ");
+                        String question = sc.nextLine();
+
+                        System.out.print("Enter Security Answer: ");
+                        String answer = sc.nextLine();
+
+                        userService.register(
+                                name, email, password, question, answer);
+
+                        System.out.println("Registration successful");
                         break;
 
+                    // ================= LOGIN =================
                     case 2:
                         System.out.print("Enter Email: ");
                         String loginEmail = sc.nextLine();
@@ -66,150 +69,56 @@ public class RevPasswordManagerApp {
                         System.out.print("Enter Password: ");
                         String loginPassword = sc.nextLine();
 
-                        loggedInUserId =
-                                userService.login(loginEmail, loginPassword);
+                        int userId =
+                                userService.login(
+                                        loginEmail, loginPassword);
 
-                        if (loggedInUserId != -1) {
-                            logger.info("User logged in successfully");
-                            System.out.println("Login successful");
-                        } else {
-                            System.out.println("Invalid credentials");
-                        }
+                        System.out.println("Login successful");
+                        System.out.println("User ID: " + userId);
                         break;
 
+                    // ================= FORGOT PASSWORD =================
                     case 3:
-                        if (loggedInUserId == -1) {
-                            System.out.println("Please login first");
+                        System.out.print("Enter registered Email: ");
+                        String fpEmail = sc.nextLine();
+
+                        String secQ =
+                                userService.getSecurityQuestion(fpEmail);
+
+                        if (secQ == null) {
+                            System.out.println("Email not found");
                             break;
                         }
 
-                        System.out.print("Account Name: ");
-                        String accountName = sc.nextLine();
+                        System.out.println(
+                                "Security Question: " + secQ);
 
-                        System.out.print("Username: ");
-                        String accUsername = sc.nextLine();
+                        System.out.print("Enter Answer: ");
+                        String secAns = sc.nextLine();
 
-                        System.out.print("Password: ");
-                        String accPassword = sc.nextLine();
+                        System.out.print("Enter New Password: ");
+                        String newPass = sc.nextLine();
 
-                        if (userService.addPassword(
-                                loggedInUserId,
-                                accountName,
-                                accUsername,
-                                accPassword)) {
-
-                            logger.info("Password added");
-                            System.out.println("Password added successfully");
+                        if (userService.forgotPassword(
+                                fpEmail, secAns, newPass)) {
+                            System.out.println(
+                                    "Password reset successful");
                         } else {
-                            System.out.println("Failed to add password");
+                            System.out.println(
+                                    "Incorrect security answer");
                         }
                         break;
 
                     case 4:
-                        if (loggedInUserId == -1) {
-                            System.out.println("Please login first");
-                            break;
-                        }
-                        userService.listPasswords(loggedInUserId);
-                        break;
-
-                    case 5:
-                        if (loggedInUserId == -1) {
-                            System.out.println("Please login first");
-                            break;
-                        }
-
-                        System.out.print("Enter Account Name: ");
-                        String searchAccount = sc.nextLine();
-                        userService.searchPassword(loggedInUserId, searchAccount);
-                        break;
-
-                    case 6:
-                        if (loggedInUserId == -1) {
-                            System.out.println("Please login first");
-                            break;
-                        }
-
-                        System.out.print("Enter ENTRY_ID: ");
-                        int viewId = sc.nextInt();
-                        sc.nextLine();
-
-                        System.out.print("Re-enter Master Password: ");
-                        String masterPassword = sc.nextLine();
-
-                        userService.viewPassword(
-                                viewId,
-                                loggedInUserId,
-                                masterPassword);
-                        break;
-
-                    case 7:
-                        if (loggedInUserId == -1) {
-                            System.out.println("Please login first");
-                            break;
-                        }
-
-                        System.out.print("Enter ENTRY_ID: ");
-                        int updateId = sc.nextInt();
-                        sc.nextLine();
-
-                        System.out.print("New Username: ");
-                        String newUsername = sc.nextLine();
-
-                        System.out.print("New Password: ");
-                        String newPassword = sc.nextLine();
-
-                        if (userService.updatePassword(
-                                updateId,
-                                loggedInUserId,
-                                newUsername,
-                                newPassword)) {
-
-                            logger.info("Password updated");
-                            System.out.println("Password updated successfully");
-                        } else {
-                            System.out.println("Update failed");
-                        }
-                        break;
-
-                    case 8:
-                        if (loggedInUserId == -1) {
-                            System.out.println("Please login first");
-                            break;
-                        }
-
-                        System.out.print("Enter ENTRY_ID: ");
-                        int deleteId = sc.nextInt();
-                        sc.nextLine();
-
-                        if (userService.deletePassword(
-                                deleteId,
-                                loggedInUserId)) {
-
-                            logger.info("Password deleted");
-                            System.out.println("Password deleted successfully");
-                        } else {
-                            System.out.println("Delete failed");
-                        }
-                        break;
-
-                    case 9:
-                        loggedInUserId = -1;
-                        logger.info("User logged out");
-                        System.out.println("Logout successful");
-                        break;
-
-                    case 10:
-                        logger.info("Application exited");
+                        System.out.println("Thank you!");
                         sc.close();
-                        System.exit(0);
+                        return;
 
                     default:
                         System.out.println("Invalid choice");
                 }
 
             } catch (ValidationException e) {
-                logger.warn("Validation error: " + e.getMessage());
                 System.out.println(e.getMessage());
             }
         }

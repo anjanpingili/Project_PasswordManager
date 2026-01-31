@@ -1,7 +1,5 @@
 package com.rev.passwordmanager.service;
 
-import org.apache.log4j.Logger;
-
 import com.rev.passwordmanager.dao.PasswordEntryDAO;
 import com.rev.passwordmanager.dao.UserDAO;
 import com.rev.passwordmanager.exception.ValidationException;
@@ -9,77 +7,104 @@ import com.rev.passwordmanager.util.ValidationUtil;
 
 public class UserService {
 
-    private static final Logger logger =
-            Logger.getLogger(UserService.class);
-
     private UserDAO userDAO = new UserDAO();
-    private PasswordEntryDAO passwordEntryDAO = new PasswordEntryDAO();
+    private PasswordEntryDAO passwordDAO = new PasswordEntryDAO();
 
-    // Register
-    public boolean register(String name, String email, String password)
+    // ================= REGISTER =================
+    public boolean register(String name,
+                            String email,
+                            String password,
+                            String question,
+                            String answer)
             throws ValidationException {
 
-        logger.info("Register request received");
+        if (!ValidationUtil.isValidEmail(email))
+            throw new ValidationException("Invalid email format");
 
-        if (!ValidationUtil.isValidEmail(email)) {
-            logger.warn("Invalid email entered");
-            throw new ValidationException("Invalid email. Email must contain '@'");
-        }
-
-        if (!ValidationUtil.isValidPassword(password)) {
-            logger.warn("Invalid password entered");
+        if (!ValidationUtil.isValidPassword(password))
             throw new ValidationException(
-                    "Invalid password. Password must be at least 6 characters");
-        }
+                    "Password must be at least 6 characters");
 
-        return userDAO.registerUser(name, email, password);
+        if (question == null || question.trim().isEmpty())
+            throw new ValidationException(
+                    "Security question is mandatory");
+
+        if (answer == null || answer.trim().isEmpty())
+            throw new ValidationException(
+                    "Security answer is mandatory");
+
+        return userDAO.registerUser(
+                name, email, password, question, answer);
     }
 
-    // Login
+    // ================= LOGIN =================
     public int login(String email, String password)
             throws ValidationException {
 
-        logger.info("Login request received");
-
-        if (!ValidationUtil.isValidEmail(email)) {
-            logger.warn("Invalid login email");
+        if (!ValidationUtil.isValidEmail(email))
             throw new ValidationException("Invalid email format");
-        }
 
-        if (!ValidationUtil.isValidPassword(password)) {
-            logger.warn("Invalid login password");
-            throw new ValidationException(
-                    "Invalid password. Minimum 6 characters required");
-        }
+        if (!ValidationUtil.isValidPassword(password))
+            throw new ValidationException("Invalid password");
 
         return userDAO.loginUser(email, password);
     }
 
-    // Password operations
-    public boolean addPassword(int userId, String accountName,
-                               String username, String password) {
-        return passwordEntryDAO.addPassword(userId, accountName, username, password);
+    // ================= PASSWORD VAULT =================
+    public boolean addPassword(int userId,
+                               String accountName,
+                               String username,
+                               String password) {
+
+        return passwordDAO.addPassword(
+                userId, accountName, username, password);
     }
 
     public void listPasswords(int userId) {
-        passwordEntryDAO.getAllPasswords(userId);
+        passwordDAO.getAllPasswords(userId);
     }
 
     public void searchPassword(int userId, String accountName) {
-        passwordEntryDAO.searchPassword(userId, accountName);
+        passwordDAO.searchPassword(userId, accountName);
     }
 
-    public void viewPassword(int entryId, int userId, String masterPassword) {
-        passwordEntryDAO.viewPassword(entryId, userId, masterPassword);
+    public void viewPassword(int entryId,
+                             int userId,
+                             String masterPassword)
+            throws ValidationException {
+
+        int verified =
+                userDAO.loginUserById(userId, masterPassword);
+
+        if (verified == -1)
+            throw new ValidationException(
+                    "Invalid master password");
+
+        passwordDAO.viewPassword(entryId, userId);
     }
 
-    public boolean updatePassword(int entryId, int userId,
-                                  String newUsername, String newPassword) {
-        return passwordEntryDAO.updatePassword(
-                entryId, userId, newUsername, newPassword);
+    // ================= FORGOT PASSWORD =================
+    public String getSecurityQuestion(String email)
+            throws ValidationException {
+
+        if (!ValidationUtil.isValidEmail(email))
+            throw new ValidationException("Invalid email format");
+
+        return userDAO.getSecurityQuestion(email);
     }
 
-    public boolean deletePassword(int entryId, int userId) {
-        return passwordEntryDAO.deletePassword(entryId, userId);
+    public boolean forgotPassword(String email,
+                                  String answer,
+                                  String newPassword)
+            throws ValidationException {
+
+        if (!ValidationUtil.isValidPassword(newPassword))
+            throw new ValidationException(
+                    "Password must be at least 6 characters");
+
+        if (userDAO.verifySecurityAnswer(email, answer)) {
+            return userDAO.resetPassword(email, newPassword);
+        }
+        return false;
     }
 }

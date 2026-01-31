@@ -2,43 +2,34 @@ package com.rev.passwordmanager.test;
 
 import static org.junit.Assert.assertTrue;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import com.rev.passwordmanager.dao.UserDAO;
 
 public class UserDAOTest {
 
-    private UserDAO userDAO;
-
-    @Before
-    public void setUp() {
-        userDAO = new UserDAO();
-    }
-
     @Test
-    public void testUserRegistration() {
+    public void testRegisterUser() {
 
-        String email = "junit_" + System.currentTimeMillis() + "@gmail.com";
+        UserDAO dao = new UserDAO();
 
-        boolean result = userDAO.registerUser(
-                "JUnitUser",
-                email,
-                "junit123"
-        );
+        boolean result = dao.registerUser(
+                "daoUser",
+                "dao@gmail.com",
+                "dao123",
+                "Birth city?",
+                "hyd");
 
         assertTrue(result);
     }
 
     @Test
-    public void testUserLogin() {
+    public void testLoginUser() {
 
-        String email = "login_" + System.currentTimeMillis() + "@gmail.com";
+        UserDAO dao = new UserDAO();
+        int userId = dao.loginUser(
+                "dao@gmail.com", "dao123");
 
-        userDAO.registerUser("LoginUser", email, "login123");
-
-        int userId = userDAO.loginUser(email, "login123");
-
-        assertTrue(userId != -1);
+        assertTrue(userId > 0);
     }
 }

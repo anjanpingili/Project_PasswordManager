@@ -1,0 +1,25 @@
+# Eclipse IDE files
+.project
+.classpath
+.settings/
+
+# Compiled files
+bin/
+target/
+*.class
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# JUnit / Test output
+surefire-reports/
+
+# Maven (if added later)
+dependency-reduced-pom.xml
+
+*.jar
+

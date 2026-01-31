@@ -1,7 +1,5 @@
 package com.rev.passwordmanager.test;
 
-import static org.junit.Assert.fail;
-
 import org.junit.Test;
 
 import com.rev.passwordmanager.exception.ValidationException;
@@ -11,47 +9,90 @@ public class UserServiceValidationTest {
 
     private UserService userService = new UserService();
 
-    //Invalid email test
-    @Test
-    public void testRegisterInvalidEmail() {
-        try {
-            userService.register("TestUser", "invalidemail", "password123");
-            fail("ValidationException expected for invalid email");
-        } catch (ValidationException e) {
-            // Expected
-        }
+    // ================= REGISTER VALIDATIONS =================
+
+    @Test(expected = ValidationException.class)
+    public void testRegisterInvalidEmail() throws ValidationException {
+
+        userService.register(
+                "abc",
+                "abc",              // invalid email
+                "abc123",
+                "Pet name?",
+                "tom"
+        );
     }
 
-    //  Invalid password test
-    @Test
-    public void testRegisterInvalidPassword() {
-        try {
-            userService.register("TestUser", "test@gmail.com", "123");
-            fail("ValidationException expected for invalid password");
-        } catch (ValidationException e) {
-            // Expected
-        }
+    @Test(expected = ValidationException.class)
+    public void testRegisterShortPassword() throws ValidationException {
+
+        userService.register(
+                "abc",
+                "abc@gmail.com",
+                "123",              // invalid password
+                "Pet name?",
+                "tom"
+        );
     }
 
-    //Invalid login email
-    @Test
-    public void testLoginInvalidEmail() {
-        try {
-            userService.login("wrongemail", "password123");
-            fail("ValidationException expected for invalid login email");
-        } catch (ValidationException e) {
-            // Expected
-        }
+    @Test(expected = ValidationException.class)
+    public void testRegisterMissingSecurityQuestion()
+            throws ValidationException {
+
+        userService.register(
+                "abc",
+                "abc@gmail.com",
+                "abc123",
+                "",                 // missing question
+                "tom"
+        );
     }
 
-    // Invalid login password
-    @Test
-    public void testLoginInvalidPassword() {
-        try {
-            userService.login("test@gmail.com", "123");
-            fail("ValidationException expected for invalid login password");
-        } catch (ValidationException e) {
-            
-        }
+    @Test(expected = ValidationException.class)
+    public void testRegisterMissingSecurityAnswer()
+            throws ValidationException {
+
+        userService.register(
+                "abc",
+                "abc@gmail.com",
+                "abc123",
+                "Pet name?",
+                ""                  // missing answer
+        );
+    }
+
+    // ================= LOGIN VALIDATIONS =================
+
+    @Test(expected = ValidationException.class)
+    public void testLoginInvalidEmail()
+            throws ValidationException {
+
+        userService.login(
+                "abc",              // invalid email
+                "abc123"
+        );
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testLoginInvalidPassword()
+            throws ValidationException {
+
+        userService.login(
+                "abc@gmail.com",
+                "123"               // invalid password
+        );
+    }
+
+    // ================= FORGOT PASSWORD VALIDATIONS =================
+
+    @Test(expected = ValidationException.class)
+    public void testForgotPasswordShortNewPassword()
+            throws ValidationException {
+
+        userService.forgotPassword(
+                "abc@gmail.com",
+                "tom",
+                "123"               // invalid new password
+        );
     }
 }

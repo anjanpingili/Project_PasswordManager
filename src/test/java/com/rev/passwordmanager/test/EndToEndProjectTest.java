@@ -5,55 +5,39 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 import com.rev.passwordmanager.dao.PasswordEntryDAO;
-import com.rev.passwordmanager.exception.ValidationException;
-import com.rev.passwordmanager.service.UserService;
+import com.rev.passwordmanager.dao.UserDAO;
 
 public class EndToEndProjectTest {
 
     @Test
-    public void testCompleteFlow() throws ValidationException {
+    public void testCompleteFlow() {
 
-        UserService userService = new UserService();
-        PasswordEntryDAO passwordEntryDAO = new PasswordEntryDAO();
+        UserDAO userDAO = new UserDAO();
+        PasswordEntryDAO pwdDAO = new PasswordEntryDAO();
 
-        // Use stable test email
-        String email = "e2e_test@gmail.com";
-        String password = "endpass123";
+        // Register
+        boolean registered = userDAO.registerUser(
+                "e2e",
+                "e2e@gmail.com",
+                "e2e123",
+                "Fav color?",
+                "blue");
 
-        int userId;
+        assertTrue(registered);
 
-        // 1. Try registration
-        try {
-            boolean registered = userService.register(
-                    "EndUser",
-                    email,
-                    password
-            );
-            assertTrue(registered);
-        } catch (Exception e) {
-            // Ignore if user already exists
-        }
+        // Login
+        int userId = userDAO.loginUser(
+                "e2e@gmail.com", "e2e123");
 
-        // 2. Login (always works if user exists)
-        userId = userService.login(email, password);
-        assertTrue(userId != -1);
+        assertTrue(userId > 0);
 
-        // 3. Add password entry
-        boolean added = passwordEntryDAO.addPassword(
+        // Add password
+        boolean added = pwdDAO.addPassword(
                 userId,
-                "EndAccount",
-                "end_username",
-                "accountpass"
-        );
+                "Facebook",
+                "fb@gmail.com",
+                "fbpass");
+
         assertTrue(added);
-
-        // 4. List passwords
-        passwordEntryDAO.getAllPasswords(userId);
-
-        // 5. Search password
-        passwordEntryDAO.searchPassword(userId, "EndAccount");
-
-        // End-to-end flow passed
-        assertTrue(true);
     }
 }
